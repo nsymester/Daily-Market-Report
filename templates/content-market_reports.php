@@ -46,7 +46,8 @@
 
 	<?php if ( is_search() ) : ?>
 	<div class="entry-summary">
-		<?php the_excerpt(); ?>
+		<?php the_content(); ?>
+		<p>content</p>
 	</div><!-- .entry-summary -->
 	<?php else : ?>
 	<div class="entry-content">

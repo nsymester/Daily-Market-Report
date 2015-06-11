@@ -40,6 +40,8 @@ License: GPLv2
         'menu_position' => 5,
         'supports'      => array( 'title', 'editor', 'thumbnail' ),
         'has_archive'   => true,
+        'exclude_from_search' => false,
+        'query_var' => true,
       );
       register_post_type( 'market_reports', $args ); 
     }
@@ -267,7 +269,15 @@ License: GPLv2
                 } else {
                     $template_path = plugin_dir_path( __FILE__ ) . '/templates/archive-market_reports.php';
                 }
-            }
+            } else if ( is_search() ) {
+                // checks if the file exists in the theme first,
+                // otherwise serve the file from the plugin
+                if ( $theme_file = locate_template( array ( 'search-market_reports.php' ) ) ) {
+                    $template_path = $theme_file;
+                } else {
+                    $template_path = plugin_dir_path( __FILE__ ) . '/templates/search-market_reports.php';
+                }
+            }            
         }
         return $template_path;
     }

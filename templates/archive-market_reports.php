@@ -50,6 +50,7 @@
           		</div>
 
           		<div class="col-sm-9 col-md-9">
+          			<?php get_search_form(); ?>
             		<div class="mo-page">
               			<h2>Daily Market Report</h2>
 
