@@ -40,7 +40,7 @@ get_header(); ?>
                     <div class="mo-page">
                         <h2>Daily Market Report</h2>
 
-                        <?php if ( have_posts() ) : ?>
+                        <?php if ( have_posts() && strlen( trim(get_search_query()) ) != 0 ) : ?>
 
                         <div class="row">
                             <div class="col-sm-12">
@@ -52,7 +52,7 @@ get_header(); ?>
 
                         <div class="row m20 js-masonry">
                         <?php
-                            $args = array_merge( $wp_query->query_vars, array( 'posts_per_page' => 2, 'post_type' => 'market_reports') );
+                            $args = array_merge( $wp_query->query_vars, array( 'posts_per_page' => 10, 'post_type' => 'market_reports') );
                             query_posts($args);
 
                             // Start the Loop.
@@ -83,7 +83,7 @@ get_header(); ?>
                                 <p class="text-center"><?php printf( __( 'No results were found for: %s', 'shape' ), '<span style="text-decoration:underline;"><strong>' . get_search_query() . '</strong></span>' ); ?>. Please eneter a new search term or view our latest news below:</p>
                             </div>
                         </div>
-                        
+
                         <hr />     
 
                         <?php endif; ?>
