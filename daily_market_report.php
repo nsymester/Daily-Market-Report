@@ -18,35 +18,48 @@ License: GPLv2
 
 
     function my_custom_post_market_reports() {
-      $labels = array(
-        'name'               => _x( 'Market Reports', 'post type general name' ),
-        'singular_name'      => _x( 'Market Report', 'post type singular name' ),
-        'add_new'            => _x( 'Add New', 'Market Report' ),
-        'add_new_item'       => __( 'Add New Market Report' ),
-        'edit_item'          => __( 'Edit Market Report' ),
-        'new_item'           => __( 'New Market Report' ),
-        'all_items'          => __( 'All Market Reports' ),
-        'view_item'          => __( 'View Market Report' ),
-        'search_items'       => __( 'Search Market Reports' ),
-        'not_found'          => __( 'No Market Reports found' ),
-        'not_found_in_trash' => __( 'No Market Reports found in the Trash' ), 
-        'parent_item_colon'  => '',
-        'menu_name'          => 'Market Reports'
-      );
-      $args = array(
-        'labels'        => $labels,
-        'description'   => 'Holds our Market Reports data',
-        'public'        => true,
-        'menu_position' => 5,
-        'supports'      => array( 'title', 'editor', 'thumbnail' ),
-        'has_archive'   => true,
-        'exclude_from_search' => false,
-        'query_var' => true,
-      );
-      register_post_type( 'market_reports', $args ); 
-    }
-    add_action( 'init', 'my_custom_post_market_reports' );
 
+        $labels = array(
+            'name'               => _x( 'Market Reports', 'post type general name' ),
+            'singular_name'      => _x( 'Market Report', 'post type singular name' ),
+            'add_new'            => _x( 'Add New', 'Market Report' ),
+            'add_new_item'       => __( 'Add New Market Report' ),
+            'edit_item'          => __( 'Edit Market Report' ),
+            'new_item'           => __( 'New Market Report' ),
+            'all_items'          => __( 'All Market Reports' ),
+            'view_item'          => __( 'View Market Report' ),
+            'search_items'       => __( 'Search Market Reports' ),
+            'not_found'          => __( 'No Market Reports found' ),
+            'not_found_in_trash' => __( 'No Market Reports found in the Trash' ), 
+            'parent_item_colon'  => '',
+            'menu_name'          => 'Market Reports',
+            /* Custom archive label.  Must filter 'post_type_archive_title' to use. */
+            'archive_title'      => __( 'Daily Market Reports', 'example-textdomain' ),
+        );
+
+        $args = array(
+            'labels'              => $labels,
+            'description'         => 'Holds our Market Reports data',
+            'public'              => true,
+            'show_ui'             => true,
+            'show_in_menu'        => true,
+            'show_in_nav_menus'   => true,    
+            'show_in_admin_bar'   => true,
+            'menu_position'       => 5,
+            'supports'            => array( 'title', 'editor', 'thumbnail' ),
+            'label'               => 'Daily Market Reports',
+            'has_archive'         => true,
+            'exclude_from_search' => false,
+            'query_var'           => true,
+            'rewrite'             => array ( 'slug' => 'market-reports' ),
+            
+        );
+
+        register_post_type( 'market_reports', $args ); 
+
+    }
+
+    add_action( 'init', 'my_custom_post_market_reports' ); 
 
     //CUSTOM INTERACTION MESSAGES
     function my_updated_messages( $messages ) {
@@ -67,7 +80,7 @@ License: GPLv2
       return $messages;
     }
     add_filter( 'post_updated_messages', 'my_updated_messages' );
-
+ 
 
 /*****************************************************************
 :: SCRIPT - market_report_current_price Meta Box
@@ -249,37 +262,70 @@ License: GPLv2
 :: SCRIPT - Template Functions
 ******************************************************************/
 
-    add_filter( 'template_include', 'include_template_function', 1 );
+    function market_reports_search( $search_template ) {
 
-    function include_template_function( $template_path ) {
-        if ( get_post_type() == 'market_reports' ) {
-            if ( is_single() ) {
-                // checks if the file exists in the theme first,
-                // otherwise serve the file from the plugin
-                if ( $theme_file = locate_template( array ( 'single-market_reports.php' ) ) ) {
-                    $template_path = $theme_file;
-                } else {
-                    $template_path = plugin_dir_path( __FILE__ ) . '/templates/single-market_reports.php';
-                }
-            } else if ( is_archive() ) {
-                // checks if the file exists in the theme first,
-                // otherwise serve the file from the plugin
-                if ( $theme_file = locate_template( array ( 'archive-market_reports.php' ) ) ) {
-                    $template_path = $theme_file;
-                } else {
-                    $template_path = plugin_dir_path( __FILE__ ) . '/templates/archive-market_reports.php';
-                }
-            } else if ( is_search() ) {
-                // checks if the file exists in the theme first,
-                // otherwise serve the file from the plugin
-                if ( $theme_file = locate_template( array ( 'search-market_reports.php' ) ) ) {
-                    $template_path = $theme_file;
-                } else {
-                    $template_path = plugin_dir_path( __FILE__ ) . '/templates/search-market_reports.php';
-                }
-            }            
-        }
-        return $template_path;
+        if ( is_search() ) {
+            // checks if the file exists in the theme first,
+            // otherwise serve the file from the plugin
+            if ( $theme_file = locate_template( array ( 'search-market_reports.php' ) ) ) {
+
+                $search_template = $theme_file;
+
+            } else {
+
+                $search_template = plugin_dir_path( __FILE__ ) . '/templates/search-market_reports.php';
+
+            }
+
+        }            
+        
+        return $search_template;
     }
+
+    add_filter( 'template_include', 'market_reports_search', 1 );
+
+
+    //route archive- template
+    function market_reports_archive( $archive_template ){
+
+      if(is_post_type_archive('market_reports')){
+
+            $exists_in_theme = locate_template('archive-market_reports.php', false);
+
+            if($exists_in_theme == ''){
+
+                return plugin_dir_path(__FILE__) . '/templates/archive-market_reports.php';
+
+            }
+
+      }
+
+      return $template;
+
+    }
+
+    add_filter('archive_template','market_reports_archive');
+
+
+    //route single- template
+    function market_reports_single( $single_template ){
+
+        if(is_singular('market_reports')){
+
+            $found = locate_template('single-market_reports.php', false);
+
+            if($found == ''){
+
+                return plugin_dir_path(__FILE__) .'/templates/single-market_reports.php';
+
+            }
+
+        }
+
+        return $single_template;
+    }
+
+    add_filter('single_template','market_reports_single');
+
 
 ?>
