@@ -1,5 +1,5 @@
 // Project configuration
-var project     = 'Daily-Market-Report-Theme';
+var project     = 'Daily-Market-Report-Plugin';
 
 // include gulp
 var gulp        = require('gulp'); 
