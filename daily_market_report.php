@@ -3,65 +3,100 @@
 Plugin Name: Daily Market Report
 Plugin URI: http://www.magnaoptions.com/
 Description: A plugin which creates custom post type displaying Daily Market Report.
-Version: 1.0
+Version: 1.1
 Author: Neil Symester
 Author URI: http://www.pixel-twist.com/
 License: GPLv2
 */
 
-/*****************************************************************
-:: SCRIPT - Declare CONSTANTS
-******************************************************************/
+// Custom template tags for this theme.
+require 'inc/template-tags.php';
 
-    // Custom template tags for this theme.
-    require 'inc/template-tags.php';
+class MODailyMarketReport {
+     
+    /**
+     * Constructor. Called when plugin is initialised
+     */
+    function __construct() {
+        add_action( 'init', array( $this, 'register_custom_post_market_reports' ) );
+        add_filter( 'post_updated_messages', array( $this, 'my_updated_messages') );
 
+        add_action( 'add_meta_boxes', array( $this, 'register_meta_boxes' ) ); 
 
-    function my_custom_post_market_reports() {
+        add_action( 'save_post', array( $this, 'save_current_price' ) );
+        add_action( 'save_post', array( $this, 'save_support_levels' ) );
+        add_action( 'save_post', array( $this, 'save_resistance_levels' ) );
 
-        $labels = array(
-            'name'               => _x( 'Market Reports', 'post type general name' ),
-            'singular_name'      => _x( 'Market Report', 'post type singular name' ),
-            'add_new'            => _x( 'Add New', 'Market Report' ),
-            'add_new_item'       => __( 'Add New Market Report' ),
-            'edit_item'          => __( 'Edit Market Report' ),
-            'new_item'           => __( 'New Market Report' ),
-            'all_items'          => __( 'All Market Reports' ),
-            'view_item'          => __( 'View Market Report' ),
-            'search_items'       => __( 'Search Market Reports' ),
-            'not_found'          => __( 'No Market Reports found' ),
-            'not_found_in_trash' => __( 'No Market Reports found in the Trash' ), 
-            'parent_item_colon'  => '',
-            'menu_name'          => 'Market Reports',
-            /* Custom archive label.  Must filter 'post_type_archive_title' to use. */
-            'archive_title'      => __( 'Daily Market Reports', 'example-textdomain' ),
+        add_filter( 'template_include', array( $this, 'market_reports_search' ), 1 );
+        add_filter( 'archive_template', array( $this, 'market_reports_archive' ) );
+        add_filter( 'single_template', array( $this, 'market_reports_single' ) );
+
+    }
+     
+    /**
+     * Register a custom post called 'Market Reports'
+     */
+    function register_custom_post_market_reports() {
+        
+        register_post_type( 
+
+            'market_reports', array (
+
+                'labels' => array (
+                    'name'               => _x( 'Market Reports', 'post type general name', plugin_basename( __FILE__ ) ),
+                    'singular_name'      => _x( 'Market Report', 'post type singular name', plugin_basename( __FILE__ ) ),
+                    'menu_name'          => _x( 'Market Reports', 'admin menu', plugin_basename( __FILE__ )),
+                    'name_admin_bar'     => _x( 'Market Report', 'add new on admin bar', plugin_basename( __FILE__ ) ),
+                    'add_new'            => _x( 'Add New', 'Market Report', plugin_basename( __FILE__ ) ),
+                    'add_new_item'       => __( 'Add New Market Report', plugin_basename( __FILE__ ) ),
+                    'new_item'           => __( 'New Market Report', plugin_basename( __FILE__ ) ),
+                    'edit_item'          => __( 'Edit Market Report', plugin_basename( __FILE__ ) ),
+                    'view_item'          => __( 'View Market Report', plugin_basename( __FILE__ ) ),
+                    'all_items'          => __( 'All Market Reports', plugin_basename( __FILE__ ) ),
+                    'search_items'       => __( 'Search Market Reports', plugin_basename( __FILE__ ) ),
+                    'parent_item_colon'  => __( 'Parent Contacts:', plugin_basename( __FILE__ ) ),
+                    'not_found'          => __( 'No Market Reports found', plugin_basename( __FILE__ ) ),
+                    'not_found_in_trash' => __( 'No Market Reports found in the Trash', plugin_basename( __FILE__ ) ), 
+                    /* Custom archive label.  Must filter 'post_type_archive_title' to use. */
+                    'archive_title'      => __( 'Daily Market Reports', plugin_basename( __FILE__ ) ),
+                ),
+
+                'description'         => 'Holds our Market Reports data',
+
+                // Frontend
+                'has_archive'         => true,
+                'public'              => true,
+                'publicly_queryable'  => true,
+
+                // Admin
+                'capability_type'     => 'post',
+                'menu_icon'           => 'dashicons-analytics',
+                'menu_position'       => 5,
+                'query_var'           => true,
+                'show_ui'             => true,
+                'show_in_menu'        => true,
+                'show_in_nav_menus'   => true,    
+                'show_in_admin_bar'   => true,
+                'supports'            => array( 
+                    'title', 
+                    'author',
+                    'editor'
+                ),
+
+                'label'               => 'Daily Market Reports',
+                'exclude_from_search' => false,
+                'rewrite'             => array ( 'slug' => 'market-reports' ),
+            )            
+
         );
-
-        $args = array(
-            'labels'              => $labels,
-            'description'         => 'Holds our Market Reports data',
-            'public'              => true,
-            'show_ui'             => true,
-            'show_in_menu'        => true,
-            'show_in_nav_menus'   => true,    
-            'show_in_admin_bar'   => true,
-            'menu_position'       => 5,
-            'supports'            => array( 'title', 'editor', 'thumbnail' ),
-            'label'               => 'Daily Market Reports',
-            'has_archive'         => true,
-            'exclude_from_search' => false,
-            'query_var'           => true,
-            'rewrite'             => array ( 'slug' => 'market-reports' ),
-            
-        );
-
-        register_post_type( 'market_reports', $args ); 
 
     }
 
-    add_action( 'init', 'my_custom_post_market_reports' ); 
-
     //CUSTOM INTERACTION MESSAGES
+    /**
+     * Custom Interaction Messages
+     * @param  string $messages messages
+     */
     function my_updated_messages( $messages ) {
       global $post, $post_ID;
       $messages['market_reports'] = array(
@@ -79,189 +114,202 @@ License: GPLv2
       );
       return $messages;
     }
-    add_filter( 'post_updated_messages', 'my_updated_messages' );
+
+    /**
+    * Registers Meta Boxes on our Market Reports Custom Post Type
+    */
+    function register_meta_boxes() {
+        add_meta_box( 
+            'current-price',
+            __( 'Current price', plugin_basename( __FILE__ ) ),
+            array( $this, 'output_current_price'),
+            'market_reports',
+            'normal',
+            'high'
+        );
+
+        add_meta_box( 
+            'support-levels',
+            __( 'Support Levels', plugin_basename( __FILE__ ) ),
+            array( $this, 'support_levels'),
+            'market_reports',
+            'normal',
+            'high'
+        );
+
+        add_meta_box( 
+            'resistance-levels',
+            __( 'Resistance levels',  plugin_basename( __FILE__ ) ),
+            array( $this, 'resistance_levels'),
+            'market_reports',
+            'normal',
+            'high'
+        );
+
+    }
+
+    /**
+     * Output a Current Price meta box
+     * @param  WP_Post $post WordPress Post object
+     */
+    function output_current_price( $post ) {
+
+        $currentPrice = get_post_meta($post->ID, '_current_price', true);
+
+        // Add a nonce field so we can check for it later.
+        wp_nonce_field( 'save_current_price', 'current_price_nonce' );
+     
+        // Output label and field
+        echo '<label for="current_price"></label>';
+        echo '<input type="text" id="current_price" name="current_price" placeholder="enter the current price" value="' . esc_attr($currentPrice) . '"/>';
+    }
+
+    /**
+     * Saves the Current Price meta box field data
+     * @param  int $post_id Post ID
+     */
+    function save_current_price( $post_id ) {
+
+        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+            return $post_id;
+        }
+
+        // Check if our nonce is set.
+        if ( ! isset( $_POST['current_price_nonce'] ) ) {
+            return $post_id;    
+        }
+
+        // Verify that the nonce is valid.
+        if ( !wp_verify_nonce( $_POST['current_price_nonce'], 'save_current_price') ) {
+            return $post_id;
+        }
+
+        // Check this is the Market Reports Custom Post Type
+        if ( 'market_reports' != $_POST['post_type'] ) {
+            return $post_id;
+        }
+        
+        // Check the logged in user has permission to edit this post
+        if ( !current_user_can( 'edit_page', $post_id ) ) {
+            return $post_id;
+        }
+        
+        // OK to save meta data
+        $currentPrice = $_POST['current_price'];
+        update_post_meta( $post_id, '_current_price', $currentPrice );
+
+    }
+
+
+    /**
+     * Output a Support Levels meta box
+     * @param  WP_Post $post WordPress Post object
+     */
+    function support_levels( $post ) {
+
+        $supportLevels = get_post_meta($post->ID, '_support_levels', true);
+
+        // Add a nonce field so we can check for it later.
+        wp_nonce_field( 'save_support_levels', 'support_levels_nonce' );
+     
+        // Output label and field
+        echo '<label for="support_levels"></label>';
+        echo '<input type="text" id="support_levels" name="support_levels" placeholder="enter the support level" value="' . esc_attr($supportLevels) . '"/>';
+    }
+
+
+    /**
+     * Save the Support Levels meta box field data
+     * @param  int $post_id Post ID
+     */
+    function save_support_levels( $post_id ) {
+
+        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+            return $post_id;
+        }
+
+        // Check if our nonce is set.
+        if ( ! isset( $_POST['support_levels_nonce'] ) ) {
+            return $post_id;    
+        }
+
+        // Verify that the nonce is valid.
+        if ( !wp_verify_nonce( $_POST['support_levels_nonce'], 'save_support_levels') ) {
+            return $post_id;
+        }
+
+        // Check this is the Market Reports Custom Post Type
+        if ( 'market_reports' != $_POST['post_type'] ) {
+            return $post_id;
+        }
+        
+        // Check the logged in user has permission to edit this post
+        if ( !current_user_can( 'edit_page', $post_id ) ) {
+            return $post_id;
+        }
+
+        $supportLevels = $_POST['support_levels'];
+        update_post_meta( $post_id, '_support_levels', $supportLevels );
+
+    }
+
+
+    /**
+     * Output a Resistance Levels meta box
+     * @param  WP_Post $post WordPress Post object
+     */
+    function resistance_levels( $post ) {
+
+        $resistanceLevels = get_post_meta($post->ID, '_resistance_levels', true);
+
+        // Add a nonce field so we can check for it later.
+        wp_nonce_field( 'save_resistance_levels', 'resistance_levels_nonce' );
+     
+        // Output label and field
+        echo '<label for="resistance_levels"></label>';
+        echo '<input type="text" id="resistance_levels" name="resistance_levels" placeholder="enter the resistance levels" value="' . esc_attr($resistanceLevels) . '"/>';
+    }
+
+
+    /**
+     * Save the Support Levels meta box field data
+     * @param  int $post_id Post ID
+     */
+    function save_resistance_levels( $post_id ) {
+
+        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+            return $post_id;
+        }
+
+        // Check if our nonce is set.
+        if ( ! isset( $_POST['resistance_levels_nonce'] ) ) {
+            return $post_id;    
+        }
+
+        // Verify that the nonce is valid.
+        if ( !wp_verify_nonce( $_POST['resistance_levels_nonce'], 'save_resistance_levels' ) ) {
+            return $post_id;
+        }
+
+        // Check this is the Market Reports Custom Post Type
+        if ( 'market_reports' != $_POST['post_type'] ) {
+            return $post_id;
+        }
+
+        // Check the logged in user has permission to edit this post
+        if ( !current_user_can( 'edit_page', $post_id ) ) {
+            return $post_id;
+        }
  
+        $resistanceLevels = $_POST['resistance_levels'];
+        update_post_meta( $post_id, '_resistance_levels', $resistanceLevels );
 
-/*****************************************************************
-:: SCRIPT - market_report_current_price Meta Box
-******************************************************************/
+    }    
 
-    //DEFINING THE META BOX
-    add_action( 'add_meta_boxes', 'market_report_current_price_box' );
-    function market_report_current_price_box() {
-        add_meta_box( 
-            'market_report_current_price_box',
-            __( 'Current price', 'myplugin_textdomain' ),
-            'market_report_current_price_box_content',
-            'market_reports',
-            'normal',
-            'high'
-        );
-    }
-
-    //DEFINING THE CONTENT OF THE META BOX
-    function market_report_current_price_box_content( $post ) {
-        wp_nonce_field( plugin_basename( __FILE__ ), 'market_report_current_price_box_content_nonce' );
-        $meta_values = get_post_meta($post->ID, 'market_report_current_price', true);
-     
-        echo '<label for="market_report_current_price"></label>';
-        if($meta_values != '') {
-            echo '<input type="text" id="market_report_current_price" name="market_report_current_price" placeholder="enter the current price" value="' . $meta_values . '"/>';
-        } else {
-            echo '<input type="text" id="market_report_current_price" name="market_report_current_price" placeholder="enter the current price"/>';
-        }
-    }
-
-/*****************************************************************
-:: SCRIPT - Saving market_report_current_price Meta Box data
-******************************************************************/
-
-    //HANDLING SUBMITTED DATA
-    add_action( 'save_post', 'market_report_current_price_box_save' );
-
-    function market_report_current_price_box_save( $post_id ) {
-
-      if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) 
-      return;
-
-      if ( !wp_verify_nonce( $_POST['market_report_current_price_box_content_nonce'], plugin_basename( __FILE__ ) ) )
-      return;
-
-      if ( 'page' == $_POST['post_type'] ) {
-        if ( !current_user_can( 'edit_page', $post_id ) )
-        return;
-      } else {
-        if ( !current_user_can( 'edit_post', $post_id ) )
-        return;
-      }
-
-      $market_report_current_price = $_POST['market_report_current_price'];
-      update_post_meta( $post_id, 'market_report_current_price', $market_report_current_price );
-
-    }
-
-
-/*****************************************************************
-:: SCRIPT - market_report_support_levels Meta Box
-******************************************************************/
-
-    //DEFINING THE META BOX
-    add_action( 'add_meta_boxes', 'market_report_support_levels_box' );
-    function market_report_support_levels_box() {
-        add_meta_box( 
-            'market_report_support_levels_box',
-            __( 'Support Levels', 'myplugin_textdomain' ),
-            'market_report_support_levels_box_content',
-            'market_reports',
-            'normal',
-            'high'
-        );
-    }
-
-    //DEFINING THE CONTENT OF THE META BOX
-    function market_report_support_levels_box_content( $post ) {
-        wp_nonce_field( plugin_basename( __FILE__ ), 'market_report_support_levels_box_content_nonce' );
-        $meta_values = get_post_meta($post->ID, 'market_report_support_levels', true);
-     
-        echo '<label for="market_report_support_levels"></label>';
-        if($meta_values != '') {
-            echo '<input type="text" id="market_report_support_levels" name="market_report_support_levels" placeholder="enter the support level" value="' . $meta_values . '"/>';
-        } else {
-            echo '<input type="text" id="market_report_support_levels" name="market_report_support_levels" placeholder="enter the support level"/>';
-        }
-    }
-
-/*****************************************************************
-:: SCRIPT - Saving market_report_support_levels Meta Box data
-******************************************************************/
-
-    //HANDLING SUBMITTED DATA
-    add_action( 'save_post', 'market_report_support_levels_box_save' );
-
-    function market_report_support_levels_box_save( $post_id ) {
-
-      if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) 
-      return;
-
-      if ( !wp_verify_nonce( $_POST['market_report_support_levels_box_content_nonce'], plugin_basename( __FILE__ ) ) )
-      return;
-
-      if ( 'page' == $_POST['post_type'] ) {
-        if ( !current_user_can( 'edit_page', $post_id ) )
-        return;
-      } else {
-        if ( !current_user_can( 'edit_post', $post_id ) )
-        return;
-      }
-
-      $market_report_support_levels = $_POST['market_report_support_levels'];
-      update_post_meta( $post_id, 'market_report_support_levels', $market_report_support_levels );
-
-    }
-
-/*****************************************************************
-:: SCRIPT - market_report_resistance_levels Meta Box
-******************************************************************/
-
-    //DEFINING THE META BOX
-    add_action( 'add_meta_boxes', 'market_report_resistance_levels_box' );
-    function market_report_resistance_levels_box() {
-        add_meta_box( 
-            'market_report_resistance_levels_box',
-            __( 'Resistance levels', 'myplugin_textdomain' ),
-            'market_report_resistance_levels_box_content',
-            'market_reports',
-            'normal',
-            'high'
-        );
-    }
-
-    //DEFINING THE CONTENT OF THE META BOX
-    function market_report_resistance_levels_box_content( $post ) {
-        wp_nonce_field( plugin_basename( __FILE__ ), 'market_report_resistance_levels_box_content_nonce' );
-        $meta_values = get_post_meta($post->ID, 'market_report_resistance_levels', true);
-     
-        echo '<label for="market_report_resistance_levels"></label>';
-        if($meta_values != '') {
-            echo '<input type="text" id="market_report_resistance_levels" name="market_report_resistance_levels" placeholder="enter the resistance levels" value="' . $meta_values . '"/>';
-        } else {
-            echo '<input type="text" id="market_report_resistance_levels" name="market_report_resistance_levels" placeholder="enter the resistance levels"/>';
-        }
-    }
-
-/*****************************************************************
-:: SCRIPT - Saving market_report_resistance_levels Meta Box data
-******************************************************************/
-
-    //HANDLING SUBMITTED DATA
-    add_action( 'save_post', 'market_report_resistance_levels_box_save' );
-
-    function market_report_resistance_levels_box_save( $post_id ) {
-
-      if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) 
-      return;
-
-      if ( !wp_verify_nonce( $_POST['market_report_resistance_levels_box_content_nonce'], plugin_basename( __FILE__ ) ) )
-      return;
-
-      if ( 'page' == $_POST['post_type'] ) {
-        if ( !current_user_can( 'edit_page', $post_id ) )
-        return;
-      } else {
-        if ( !current_user_can( 'edit_post', $post_id ) )
-        return;
-      }
-
-      $market_report_resistance_levels = $_POST['market_report_resistance_levels'];
-      update_post_meta( $post_id, 'market_report_resistance_levels', $market_report_resistance_levels );
-
-    }
-
- 
-/*****************************************************************
-:: SCRIPT - Template Functions
-******************************************************************/
-
+    /**
+     * Display market report search results
+     * @param  string $search_template name of the search template
+     */
     function market_reports_search( $search_template ) {
 
         if ( is_search() ) {
@@ -282,10 +330,11 @@ License: GPLv2
         return $search_template;
     }
 
-    add_filter( 'template_include', 'market_reports_search', 1 );
 
-
-    //route archive- template
+    /**
+     * Display all market reports
+     * @param  string $archive_template name of archive template
+     */
     function market_reports_archive( $archive_template ){
 
       if(is_post_type_archive('market_reports')){
@@ -304,10 +353,11 @@ License: GPLv2
 
     }
 
-    add_filter('archive_template','market_reports_archive');
 
-
-    //route single- template
+    /**
+     * Display a single market report
+     * @param  string $single_template name of single template
+     */
     function market_reports_single( $single_template ){
 
         if(is_singular('market_reports')){
@@ -325,7 +375,9 @@ License: GPLv2
         return $single_template;
     }
 
-    add_filter('single_template','market_reports_single');
 
+}
+ 
+$moDailyMarketReport = new MODailyMarketReport;
 
 ?>

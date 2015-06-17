@@ -31,11 +31,13 @@ gulp.task('connect', function() {
 
   connect.server({}, function (){
 
-    browserSync (files, {
+    browserSync.init (files, {
 
-      proxy: "localhost/wordpress",
+      proxy: "localhost:3000/magnaoptions",
 
-      notify: true
+      notify: false
+
+ 
 /*
       startPath: '/',
 
